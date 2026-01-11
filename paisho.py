@@ -234,8 +234,8 @@ def draw_hallowed_locations(screen, dragged_object, column, row):
     if not(dragged_object.type == PieceType.JADE or dragged_object.type==PieceType.JASMINE or dragged_object.type== PieceType.LOTUS):
         print ("Abort, not a flower!")
         return
-    for r in range(-8,9):
-        for c in range(-ROW_LENGTHS[row+8], ROW_LENGTHS[row+8]+1):
+    for c in range(-8,9):
+        for r in range(-ROW_LENGTHS[c +8], ROW_LENGTHS[c+8]+1):
             print("Checking influence at {} {}".format(c,r))
             if piece_at_position_can_influence_position(dragged_object.type,column,row,c,r):
                 print("Piece can influence {} {}".format(c,r))
