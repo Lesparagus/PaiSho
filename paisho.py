@@ -364,15 +364,30 @@ def status_box_text():
 
 def can_play_piece_at(piece, column, row):
     print("Checking if can play piece at {},{}".format(column, row))
+    #Check whether there's a tile at this spot already
     for other_piece in gamestate["board"]:
         print("Comparing to piece at {},{}".format(other_piece.column, other_piece.row))
         if other_piece.column == column and other_piece.row == row:
             print("Cannot play piece here, occupied")
             return False
+    #Check whether this is a temple here
     if (row ==8 and column ==0) or (row == -8 and column ==0) or (row ==0 and column ==8) or (row ==0 and column ==-8):
         if piece.type  <= PIECE_LOTUS:
             print("Cannot play piece here, temple restriction")
             return False
+    #If opponent has a badgermole within range, you can't place a flower down here
+    if piece.type == PIECE_JADE or piece.type == PIECE_JASMINE or piece.type == PIECE_LOTUS:
+        print ("Trying to place a flower")
+        for possible_mole in gamestate["board"]:
+            print("Checking for moles")
+            if possible_mole.type == PIECE_BADGER_MOLE:
+                print("found mole")
+                if possible_mole.owner != piece.owner:
+                    print("Mole has different owner")
+                    distance = abs(row-possible_mole.row)+abs(column-possible_mole.column)                    
+                    print("Distance is {}".format(distance))
+                    if  distance <= 5:
+                        return False
     if piece.type == PIECE_CENOTAPH:
         if gamestate["current_player"] == PLAYER_HOST and gamestate["guest_lotus_active"]:
             lotus_found = False
