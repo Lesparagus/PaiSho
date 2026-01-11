@@ -30,6 +30,7 @@ PIECE_DRAGON=8
 
 #Dialogbox types when the dialogbox is on turn
 DIALOGBOX_DRAGON = 1
+DIALOGBOX_KOI = 2
 
 ROW_LENGTHS = [4,5,6,7,8,8,8,8,8,8,8,8,8,7,6,5,4]
 gamestate = {
@@ -46,16 +47,37 @@ gamestate = {
 }
 
 class Piece(pygame.sprite.Sprite):
-    def __init__(self, image, column, row, type=PIECE_CENOTAPH, owner=PLAYER_NONE):
-        pygame.sprite.Sprite.__init__(self)
+    def set_type(self,type):
+        self.type=type
+        image=None
+        if type==PIECE_CENOTAPH:
+            image="white-cenotaph.png"
+            
+        elif type==PIECE_JADE:
+            image="white-jade.png"
+        elif type==PIECE_JASMINE:
+            image="white-jasmine.png"
+        elif type==PIECE_LOTUS:
+            image="white-lotus.png"
+        elif type==PIECE_SKY_BISON:
+            image="white-bison.png"
+        elif type==PIECE_KOI_FISH:
+            image="white-koi.png"     
+        elif type==PIECE_BADGER_MOLE:
+            image="white-badgermole.png"
+        elif type==PIECE_DRAGON:
+            image="white-dragon.png"
+
         self.original_image = pygame.image.load(image)
         self.image = self.original_image
+    def __init__(self, column, row, type=PIECE_CENOTAPH, owner=PLAYER_NONE):
+        pygame.sprite.Sprite.__init__(self)        
+        self.set_type(type)
         self.rect = self.image.get_rect()
         self.rect.x = 0
         self.rect.y = 0
         self.column = column
         self.row = row
-        self.type=type
         self.owner=owner
     def can_influence_position(self, column, row):
         if self.type == PIECE_JASMINE:
@@ -130,69 +152,69 @@ def calculate_score():
     return host_score, guest_score, unclaimed_score
 
 def setup_board():
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,0,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,1,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,2,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,3,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,4,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,5,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,6,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,7,PIECE_JASMINE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jasmine.png",-14,8,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,0,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,1,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,2,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,3,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,4,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,5,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,6,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,7,PIECE_JASMINE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-14,8,PIECE_JASMINE, PLAYER_HOST))
 
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,0,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,1,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,2,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,3,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,4,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,5,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,6,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,7,PIECE_JADE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-jade.png",-13,8,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,0,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,1,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,2,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,3,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,4,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,5,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,6,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,7,PIECE_JADE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-13,8,PIECE_JADE, PLAYER_HOST))
 
-    gamestate['unused_host_pieces'].append(Piece("white-cenotaph.png",-12,0,PIECE_CENOTAPH, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-cenotaph.png",-12,1,PIECE_CENOTAPH, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-cenotaph.png",-12,2,PIECE_CENOTAPH, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,0,PIECE_CENOTAPH, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,1,PIECE_CENOTAPH, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,2,PIECE_CENOTAPH, PLAYER_HOST))
 
-    gamestate['unused_host_pieces'].append(Piece("white-lotus.png",-12,3,PIECE_LOTUS, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,3,PIECE_LOTUS, PLAYER_HOST))
 
-    gamestate['unused_host_pieces'].append(Piece("white-bison.png",-12,5,PIECE_SKY_BISON, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-badgermole.png",-12,6,PIECE_BADGER_MOLE, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-dragon.png",-12,7,PIECE_DRAGON, PLAYER_HOST))
-    gamestate['unused_host_pieces'].append(Piece("white-koi.png",-12,8,PIECE_KOI_FISH, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,5,PIECE_SKY_BISON, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,6,PIECE_BADGER_MOLE, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,7,PIECE_DRAGON, PLAYER_HOST))
+    gamestate['unused_host_pieces'].append(Piece(-12,8,PIECE_KOI_FISH, PLAYER_HOST))
 
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,0,PIECE_JASMINE, PLAYER_GUEST)) 
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,1,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,2,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,3,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,4,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,5,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,6,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,7,PIECE_JASMINE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jasmine.png",14,8,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,0,PIECE_JASMINE, PLAYER_GUEST)) 
+    gamestate['unused_guest_pieces'].append(Piece(14,1,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,2,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,3,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,4,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,5,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,6,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,7,PIECE_JASMINE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(14,8,PIECE_JASMINE, PLAYER_GUEST))
 
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,0,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,1,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,2,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,3,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,4,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,5,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,6,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,7,PIECE_JADE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-jade.png",13,8,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,0,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,1,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,2,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,3,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,4,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,5,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,6,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,7,PIECE_JADE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(13,8,PIECE_JADE, PLAYER_GUEST))
 
-    gamestate['unused_guest_pieces'].append(Piece("white-cenotaph.png",12,0,PIECE_CENOTAPH, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-cenotaph.png",12,1,PIECE_CENOTAPH, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-cenotaph.png",12,2,PIECE_CENOTAPH, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,0,PIECE_CENOTAPH, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,1,PIECE_CENOTAPH, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,2,PIECE_CENOTAPH, PLAYER_GUEST))
 
-    gamestate['unused_guest_pieces'].append(Piece("white-lotus.png",12,3,PIECE_LOTUS, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,3,PIECE_LOTUS, PLAYER_GUEST))
 
-    gamestate['unused_guest_pieces'].append(Piece("white-bison.png",12,5,PIECE_SKY_BISON, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-badgermole.png",12,6,PIECE_BADGER_MOLE, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-dragon.png",12,7,PIECE_DRAGON, PLAYER_GUEST))
-    gamestate['unused_guest_pieces'].append(Piece("white-koi.png",12,8,PIECE_KOI_FISH, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,5,PIECE_SKY_BISON, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,6,PIECE_BADGER_MOLE, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,7,PIECE_DRAGON, PLAYER_GUEST))
+    gamestate['unused_guest_pieces'].append(Piece(12,8,PIECE_KOI_FISH, PLAYER_GUEST))
 
-    starting_piece = Piece("white-cenotaph.png",0,0, PIECE_CENOTAPH, PLAYER_NONE)
+    starting_piece = Piece(0,0, PIECE_CENOTAPH, PLAYER_NONE)
     gamestate['board'].append(starting_piece)
 
 def calculate_dimensions(screen):
@@ -239,7 +261,8 @@ def draw_board(screen, dragged_object=None):
         pygame.draw.rect(screen, GREEN, (center_x+11*line_increment+line_increment//2,center_y-line_increment//2,line_increment*3, line_increment*9), 3)    
     elif gamestate["current_player"] == DIALOGBOX:
         player = "Host" if gamestate["dialogbox_player"] == PLAYER_HOST else "Guest"
-        dialogbox_text = "{0} must select\nwhich region the\ndragon will affect".format(player)
+        piece_used = "dragon" if gamestate["dialogbox_type"] == DIALOGBOX_DRAGON else "koi"
+        dialogbox_text = "{0} must select\nwhich region the\n{1} will affect".format(player,piece_used)
         dialogbox_textbox = TextBox(screen, center_x +10*line_increment-line_increment//2, line_increment//2, line_increment*5, line_increment*9,fontSize=line_increment//2,
                 borderColour=(0, 255, 0), textColour=WHITE, colour=BLACK,
                 radius=5, borderThickness=2, color=GREEN)
@@ -443,6 +466,10 @@ def play_object(piece, column, row, gamestate):
             gamestate["current_player"] = DIALOGBOX
             gamestate["dialogbox_type"] = DIALOGBOX_DRAGON
             gamestate["dialogbox_player"] = PLAYER_HOST
+        elif piece.type == PIECE_KOI_FISH:
+            gamestate["current_player"] = DIALOGBOX
+            gamestate["dialogbox_type"] = DIALOGBOX_KOI
+            gamestate["dialogbox_player"] = PLAYER_HOST
         elif gamestate["turn_number"] > 12:
             gamestate["current_player"] = PLAYER_NONE
             gamestate["game_over"] = True
@@ -454,6 +481,10 @@ def play_object(piece, column, row, gamestate):
         if piece.type == PIECE_DRAGON:
             gamestate["current_player"] = DIALOGBOX            
             gamestate["dialogbox_type"] = DIALOGBOX_DRAGON
+            gamestate["dialogbox_player"] = PLAYER_GUEST
+        elif piece.type == PIECE_KOI_FISH:
+            gamestate["current_player"] = DIALOGBOX
+            gamestate["dialogbox_type"] = DIALOGBOX_KOI
             gamestate["dialogbox_player"] = PLAYER_GUEST
         else:
             gamestate["current_player"] = PLAYER_HOST
@@ -479,6 +510,78 @@ def play_object(piece, column, row, gamestate):
             gamestate["guest_lotus_active"] = False
         elif piece.owner == PLAYER_GUEST:
             gamestate["host_lotus_active"] = False
+def process_koi_dialogbox_button_press(location, screen):
+    
+    center_x,center_y,line_increment = calculate_dimensions(screen)
+    button = 0
+    for button_offset in range(1,9):
+
+        testrect = pygame.Rect( center_x +10*line_increment-line_increment//4, (1+button_offset)*line_increment, line_increment*4, line_increment//2)
+        print("Colliding button with rect {} to position {}".format(testrect, location))
+        if testrect.collidepoint(location):
+            button=button_offset
+            break
+    print("Button pressed is {}".format(button))
+    pieces_to_change = []
+    if button==0:
+        return
+    elif button==1:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row < 0 and piece.column >0 and abs(piece.row)+piece.column<=6:
+                    pieces_to_change.append(piece)
+    elif button==2:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row > 0 and piece.column >0 and piece.row+piece.column<=6:
+                    pieces_to_change.append(piece)
+    elif button==3:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row > 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)<=6:
+                    pieces_to_change.append(piece)
+    elif button==4:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row < 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)<=6:
+                    pieces_to_change.append(piece)
+    elif button==5:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row < 0 and piece.column >0 and abs(piece.row)+piece.column>=8) and not (piece.row==-1 and piece.column==8) and not (piece.row==-8 and piece.column==1):
+                    pieces_to_change.append(piece)
+    elif button==6:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row > 0 and piece.column >0 and piece.row+piece.column>=8) and not (piece.row==1 and piece.column==8) and not (piece.row==8 and piece.column==1):
+                    pieces_to_change.append(piece)
+    elif button==7:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row > 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)>=8) and not (piece.row==1 and piece.column==-8) and not (piece.row==8 and piece.column==-1):
+                    pieces_to_change.append(piece)
+    elif button==8:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row < 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)>=8) and not (piece.row==-1 and piece.column==-8) and not (piece.row==-8 and piece.column==-1):
+                    pieces_to_change.append(piece)
+    print("Pieces to remove is: {}".format(pieces_to_change))
+    for piece in pieces_to_change:
+        if piece.type== PIECE_JADE:
+            piece.set_type(PIECE_JASMINE)
+        else:
+            piece.set_type(PIECE_JADE)
+
+    if gamestate["dialogbox_player"]==PLAYER_GUEST:
+        print("Setting current player to host")
+        gamestate["current_player"]=PLAYER_HOST
+    else:        
+        if gamestate["turn_number"] > 12:
+            gamestate["current_player"] = PLAYER_NONE
+            gamestate["game_over"] = True
+        else:            
+            print("Setting current player to guest")
+            gamestate["current_player"]=PLAYER_GUEST
 
 def process_dragon_dialogbox_button_press(location, screen):
     
@@ -577,6 +680,9 @@ def paisho():
                 print("Mouse up!!! {} {}".format(gamestate["current_player"], gamestate["dialogbox_type"]))
                 if gamestate["current_player"] == DIALOGBOX and gamestate["dialogbox_type"] == DIALOGBOX_DRAGON:
                     process_dragon_dialogbox_button_press(event.pos, screen)                    
+                    draw_board(screen, None)
+                elif gamestate["current_player"] == DIALOGBOX and gamestate["dialogbox_type"] == DIALOGBOX_KOI:
+                    process_koi_dialogbox_button_press(event.pos, screen)                    
                     draw_board(screen, None)
                 elif dragged_object != None:
                     #Mouse-up is end of a drag, but only if it is your turn and is on a valid piece-ending-spot and it is a valid move for that piece and you were dragging a piece
