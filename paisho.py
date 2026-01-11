@@ -8,6 +8,7 @@ RED = (255,0,0)
 BROWN = (92,64,51)
 WHITE = (255,255,255)
 GREEN = (0,255,0)
+MAGENTA = (255, 0, 255)
 UNOWNED_COLOR = WHITE
 HOST_COLOR = (242,207,169)
 GUEST_COLOR = (102,72,71) 
@@ -51,8 +52,7 @@ class Piece(pygame.sprite.Sprite):
         self.type=type
         image=None
         if type==PIECE_CENOTAPH:
-            image="white-cenotaph.png"
-            
+            image="white-cenotaph.png"            
         elif type==PIECE_JADE:
             image="white-jade.png"
         elif type==PIECE_JASMINE:
@@ -80,28 +80,8 @@ class Piece(pygame.sprite.Sprite):
         self.row = row
         self.owner=owner
     def can_influence_position(self, column, row):
-        if self.type == PIECE_JASMINE:
-            #Jasmine influences up to range 3 unless in correct meadow
-            meadow_range_bonus = 0
-            if self.column > 0 and self.row < 0 and self.column + abs(self.row) <= 6:
-                meadow_range_bonus = 1
-            if self.column < 0 and self.row > 0 and abs(self.column) + self.row <= 6:
-                meadow_range_bonus = 1
-            return (abs(self.column - column)+abs(self.row - row) <= (3+meadow_range_bonus))
-        elif self.type == PIECE_JADE:
-            #Jade influences range 4-5 unless in correct meadow
-            meadow_range_bonus = 0
-            if self.column > 0 and self.row > 0 and self.column + self.row <= 6:
-                meadow_range_bonus = 1
-            if self.column < 0 and self.row < 0 and abs(self.column) + abs(self.row) <= 6:
-                meadow_range_bonus = 1
-            distance = abs(self.column - column) + abs(self.row - row)
-            return (distance >= (4-meadow_range_bonus) ) and ( distance <= 5)
-        elif self.type == PIECE_LOTUS:
-            #Lotus influences to range 2
-            return (abs(self.column - column) + abs(self.row - row) <= 2)
-        else:
-            return False
+        return piece_at_position_can_influence_position(self.type, self.column, self.row, column, row)
+
     def draw(self, screen):
         if self.owner == PLAYER_HOST:
             color = HOST_COLOR
@@ -121,7 +101,29 @@ class Piece(pygame.sprite.Sprite):
         else:
             pygame.draw.circle(screen, color, (self.rect.x + self.rect.width//2, self.rect.y + self.rect.height//2), self.rect.width//2)
         screen.blit(self.image, (self.rect.x, self.rect.y))
-        
+def piece_at_position_can_influence_position(piece_type, piece_column, piece_row, column, row):
+    distance = abs(piece_column-column)+abs(piece_row-row)
+    if piece_type == PIECE_JASMINE:
+        #Jasmine influences up to range 3 unless in correct meadow
+        meadow_range_bonus = 0
+        if  piece_column > 0 and piece_row < 0 and piece_column + abs(piece_row) <= 6:
+            meadow_range_bonus = 1
+        if  piece_column < 0 and piece_row > 0 and abs(piece_column) + piece_row <= 6:
+            meadow_range_bonus = 1
+        return distance <= (3+meadow_range_bonus)
+    elif piece_type == PIECE_JADE:
+        #Jade influences range 4-5 unless in correct meadow
+        meadow_range_bonus = 0
+        if piece_column > 0 and piece_row > 0 and  piece_column + piece_row <= 6:
+            meadow_range_bonus = 1
+        if  piece_column < 0 and piece_row < 0 and abs( piece_column) + abs(piece_row) <= 6:
+            meadow_range_bonus = 1
+        return (distance >= (4-meadow_range_bonus) ) and ( distance <= 5)
+    elif piece_type == PIECE_LOTUS:
+        #Lotus influences to range 2
+        return distance <= 2
+    else:
+        return False
 def influence_at_position(column, row):
     influence = 0
     for other_piece in gamestate['board']:
@@ -223,7 +225,7 @@ def calculate_dimensions(screen):
     line_increment = min(width//30,height//20)
     return center_x,center_y,line_increment
 
-def draw_board(screen, dragged_object=None):
+def draw_board(screen, dragged_object=None, dragged_object_position=None):
     screen.fill(BLACK)
     center_x,center_y,line_increment = calculate_dimensions(screen)
     edge_width = line_increment
@@ -290,9 +292,9 @@ def draw_board(screen, dragged_object=None):
         piece.rect.height = line_increment
         piece.image = pygame.transform.scale(piece.original_image, (line_increment, line_increment))
         piece.draw(screen)
-    print("Drawing unused pieces")
+    #print("Drawing unused pieces")
     for piece in gamestate["unused_host_pieces"]:
-        print(piece)
+        #print(piece)
         if piece != dragged_object:
             piece.rect.x = center_x + piece.column * line_increment - line_increment//2
             piece.rect.y = center_y + piece.row * line_increment -line_increment//2
@@ -301,7 +303,7 @@ def draw_board(screen, dragged_object=None):
             piece.image = pygame.transform.scale(piece.original_image, (line_increment, line_increment))
             piece.draw(screen)            
     for piece in gamestate["unused_guest_pieces"]:
-        print(piece)
+        #print(piece)
         if piece != dragged_object:
             piece.rect.x = center_x + piece.column * line_increment - line_increment//2
             piece.rect.y = center_y + piece.row * line_increment -line_increment//2
@@ -310,9 +312,39 @@ def draw_board(screen, dragged_object=None):
             piece.image = pygame.transform.scale(piece.original_image, (line_increment, line_increment))
             piece.draw(screen)
     if dragged_object:
-        print("Drawing dragged object")
+        print("Drawing dragged object with dragged oject ")
+        valid, column, row = grid_position_of_drag(dragged_object_position, screen, dragged_object)
+        print("drawing hallowed locations for dragged object {} {} {} ".format(valid, column, row))
+        if valid:
+            draw_hallowed_locations(screen, dragged_object, column, row)
+            
+        draw_blocked_locations(screen, dragged_object)
         dragged_object.draw(screen)
     pygame.display.update()
+
+def draw_hallow_location_mark(screen, column, row):
+    center_x,center_y,line_increment = calculate_dimensions(screen)    
+    pygame.draw.circle(screen, GREEN, (center_x+column*line_increment, center_y+row*line_increment), line_increment//7)
+
+def draw_blocked_location_mark(screen, column, row):
+    center_x,center_y,line_increment = calculate_dimensions(screen)    
+    pygame.draw.circle(screen, MAGENTA, (center_x+column*line_increment, center_y+row*line_increment), line_increment//10)
+def draw_hallowed_locations(screen, dragged_object, column, row):
+    if not(dragged_object.type == PIECE_JADE or dragged_object.type==PIECE_JASMINE or dragged_object.type== PIECE_LOTUS):
+        print ("Abort, not a flower!")
+        return
+    for r in range(-8,9):
+        for c in range(-ROW_LENGTHS[row+8], ROW_LENGTHS[row+8]+1):
+            print("Checking influence at {} {}".format(c,r))
+            if piece_at_position_can_influence_position(dragged_object.type,column,row,c,r):
+                print("Piece can influence {} {}".format(c,r))
+                draw_hallow_location_mark(screen, c, r)
+
+def draw_blocked_locations(screen,dragged_object):
+    for row in range(-8,9):
+        for column in range(-ROW_LENGTHS[row+8], ROW_LENGTHS[row+8]+1):
+            if not can_play_piece_at(dragged_object,column,row):
+                draw_blocked_location_mark(screen, column, row)
 def status_box_text():
 
     host_score, guest_score, unclaimed_score = calculate_score()
@@ -363,32 +395,38 @@ def status_box_text():
         return "{}'s turn {}\nTemples:\n  North: {}\n  East: {}\n  South: {}\n  West: {}\nScore:\n  Host: {}\n  Guest: {}\n  Unclaimed: {} {} {}".format(player_string, gamestate["turn_number"], north_temple, east_temple, south_temple, west_temple, host_score, guest_score, unclaimed_score, host_lotus_string,guest_lotus_string)
 
 def can_play_piece_at(piece, column, row):
-    print("Checking if can play piece at {},{}".format(column, row))
     #Check whether there's a tile at this spot already
     for other_piece in gamestate["board"]:
-        print("Comparing to piece at {},{}".format(other_piece.column, other_piece.row))
+        #print("Comparing to piece at {},{}".format(other_piece.column, other_piece.row))
         if other_piece.column == column and other_piece.row == row:
             print("Cannot play piece here, occupied")
             return False
     #Check whether this is a temple here
     if (row ==8 and column ==0) or (row == -8 and column ==0) or (row ==0 and column ==8) or (row ==0 and column ==-8):
         if piece.type  <= PIECE_LOTUS:
-            print("Cannot play piece here, temple restriction")
+            #print("Cannot play piece here, temple restriction")
             return False
     #If opponent has a badgermole within range, you can't place a flower down here
     if piece.type == PIECE_JADE or piece.type == PIECE_JASMINE or piece.type == PIECE_LOTUS:
-        print ("Trying to place a flower")
+        #print ("Trying to place a flower")
         for possible_mole in gamestate["board"]:
-            print("Checking for moles")
+            #print("Checking for moles")
             if possible_mole.type == PIECE_BADGER_MOLE:
-                print("found mole")
+                #print("found mole")
                 if possible_mole.owner != piece.owner:
-                    print("Mole has different owner")
+                    #print("Mole has different owner")
                     distance = abs(row-possible_mole.row)+abs(column-possible_mole.column)                    
-                    print("Distance is {}".format(distance))
+                    #print("Distance is {}".format(distance))
                     if  distance <= 5:
                         return False
     if piece.type == PIECE_CENOTAPH:
+        for possible_cenotaph in gamestate["board"]:
+            #print("Checking for other cenotaphs")            
+            if possible_cenotaph.type == PIECE_CENOTAPH:
+                distance = abs(row-possible_cenotaph.row)+abs(column-possible_cenotaph.column)                    
+                #print("Distance is {}".format(distance))
+                if  distance <= 5:
+                    return False
         if gamestate["current_player"] == PLAYER_HOST and gamestate["guest_lotus_active"]:
             lotus_found = False
             for other_piece in gamestate["board"]:
@@ -408,22 +446,22 @@ def can_play_piece_at(piece, column, row):
     if piece.type == PIECE_DRAGON or piece.type == PIECE_KOI_FISH or piece.type == PIECE_BADGER_MOLE or piece.type == PIECE_SKY_BISON:
         temple_available = location_is_available_temple(column, row, gamestate["current_player"])
         if temple_available == False:
-            print("Cannot play piece here, temple availability restriction")
+            #print("Cannot play piece here, temple availability restriction")
             return False
-    print("Can play piece here")
+    #print("Can play piece here")
     return True
 
 def grid_position_of_drag(position, screen, piece):
     print ("Finding grid position of drag at {}".format(position))   
     center_x,center_y,line_increment = calculate_dimensions(screen)
-    for i in range(-8, 9):
-        for j in range(-ROW_LENGTHS[i+8], ROW_LENGTHS[i+8]+1):
-            print("Checking if {} is at {}".format((i,j), position))
-            testrect = pygame.Rect(center_x + i*line_increment - line_increment//3, center_y + j*line_increment - line_increment//3, 2*line_increment//3, 2*line_increment//3)
+    for column in range(-8, 9):
+        for row in range(-ROW_LENGTHS[column+8], ROW_LENGTHS[column+8]+1):
+            #print("Checking if {} is at {}".format((column,row), position))
+            testrect = pygame.Rect(center_x + column*line_increment - line_increment//3, center_y + row*line_increment - line_increment//3, 2*line_increment//3, 2*line_increment//3)
             if testrect.collidepoint(position):
-                print("Found a valid spot to place the piece")
-                if can_play_piece_at(piece, i, j):
-                    return True, i, j
+                #print("Found a valid spot to place the piece")
+                if can_play_piece_at(piece, column, row):
+                    return True, column, row
                 else:
                     return False, 0, 0
     return False, 0, 0
@@ -457,16 +495,16 @@ def check_for_draggable_piece(position, gamestate, pieces):
             remaining_cenotaphs += 1
     for possible_piece in pieces:
         if remaining_cenotaphs+gamestate["turn_number"] >12 and possible_piece.type != PIECE_CENOTAPH:
-            print("Skipping non-cenotaph piece since host must play cenotaphs now")
+            #print("Skipping non-cenotaph piece since host must play cenotaphs now")
             continue
         if possible_piece.type == PIECE_DRAGON or possible_piece.type == PIECE_KOI_FISH or possible_piece.type == PIECE_BADGER_MOLE or possible_piece.type == PIECE_SKY_BISON:
             if available_temple(gamestate["current_player"]) == False:
                 continue
-        print("Checking if {} is at {}".format("object", position))
+        #print("Checking if {} is at {}".format("object", position))
         if possible_piece.rect.collidepoint(position):
-            print("Found a valid piece to drag")
-            print(possible_piece.rect)
-            print(position)
+            #print("Found a valid piece to drag")
+            #print(possible_piece.rect)
+            #print(position)
             return possible_piece
     return None
 def play_object(piece, column, row, gamestate):
@@ -532,11 +570,11 @@ def process_koi_dialogbox_button_press(location, screen):
     for button_offset in range(1,9):
 
         testrect = pygame.Rect( center_x +10*line_increment-line_increment//4, (1+button_offset)*line_increment, line_increment*4, line_increment//2)
-        print("Colliding button with rect {} to position {}".format(testrect, location))
+        #print("Colliding button with rect {} to position {}".format(testrect, location))
         if testrect.collidepoint(location):
             button=button_offset
             break
-    print("Button pressed is {}".format(button))
+    #print("Button pressed is {}".format(button))
     pieces_to_change = []
     if button==0:
         return
@@ -580,7 +618,7 @@ def process_koi_dialogbox_button_press(location, screen):
             if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
                 if (piece.row < 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)>=8) and not (piece.row==-1 and piece.column==-8) and not (piece.row==-8 and piece.column==-1):
                     pieces_to_change.append(piece)
-    print("Pieces to remove is: {}".format(pieces_to_change))
+    #print("Pieces to remove is: {}".format(pieces_to_change))
     for piece in pieces_to_change:
         if piece.type== PIECE_JADE:
             piece.set_type(PIECE_JASMINE)
@@ -588,14 +626,14 @@ def process_koi_dialogbox_button_press(location, screen):
             piece.set_type(PIECE_JADE)
 
     if gamestate["dialogbox_player"]==PLAYER_GUEST:
-        print("Setting current player to host")
+        #print("Setting current player to host")
         gamestate["current_player"]=PLAYER_HOST
     else:        
         if gamestate["turn_number"] > 12:
             gamestate["current_player"] = PLAYER_NONE
             gamestate["game_over"] = True
         else:            
-            print("Setting current player to guest")
+            #print("Setting current player to guest")
             gamestate["current_player"]=PLAYER_GUEST
 
 def process_dragon_dialogbox_button_press(location, screen):
@@ -605,11 +643,11 @@ def process_dragon_dialogbox_button_press(location, screen):
     for button_offset in range(1,9):
 
         testrect = pygame.Rect( center_x +10*line_increment-line_increment//4, (1+button_offset)*line_increment, line_increment*4, line_increment//2)
-        print("Colliding button with rect {} to position {}".format(testrect, location))
+        #print("Colliding button with rect {} to position {}".format(testrect, location))
         if testrect.collidepoint(location):
             button=button_offset
             break
-    print("Button pressed is {}".format(button))
+    #print("Button pressed is {}".format(button))
     pieces_to_remove = []
     if button==0:
         return
@@ -653,19 +691,16 @@ def process_dragon_dialogbox_button_press(location, screen):
             if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
                 if (piece.row < 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)>=8) and not (piece.row==-1 and piece.column==-8) and not (piece.row==-8 and piece.column==-1):
                     pieces_to_remove.append(piece)
-    print("Pieces to remove is: {}".format(pieces_to_remove))
     for piece in pieces_to_remove:
         gamestate["board"].remove(piece)
 
     if gamestate["dialogbox_player"]==PLAYER_GUEST:
-        print("Setting current player to host")
         gamestate["current_player"]=PLAYER_HOST
     else:        
         if gamestate["turn_number"] > 12:
             gamestate["current_player"] = PLAYER_NONE
             gamestate["game_over"] = True
         else:            
-            print("Setting current player to guest")
             gamestate["current_player"]=PLAYER_GUEST
 def paisho():
     pygame.init()
@@ -683,7 +718,6 @@ def paisho():
                 draw_board(screen)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 #Mouse-down is start of a drag, but only if it is your turn and is on a valid piece-starting-spot
-                print("Mouse down")
                 if dragged_object != None:
                     pass
                 elif gamestate["current_player"] == PLAYER_HOST:
@@ -692,7 +726,6 @@ def paisho():
                     dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_guest_pieces"])
                 pass
             elif event.type == pygame.MOUSEBUTTONUP:
-                print("Mouse up!!! {} {}".format(gamestate["current_player"], gamestate["dialogbox_type"]))
                 if gamestate["current_player"] == DIALOGBOX and gamestate["dialogbox_type"] == DIALOGBOX_DRAGON:
                     process_dragon_dialogbox_button_press(event.pos, screen)                    
                     draw_board(screen, None)
@@ -703,7 +736,6 @@ def paisho():
                     #Mouse-up is end of a drag, but only if it is your turn and is on a valid piece-ending-spot and it is a valid move for that piece and you were dragging a piece
                     valid, grid_x, grid_y = grid_position_of_drag(event.pos, screen, dragged_object)
                     if valid:
-                        print("Found a valid spot to place the piece")
                         play_object(dragged_object, grid_x, grid_y, gamestate)
   
                     dragged_object = None
@@ -711,10 +743,9 @@ def paisho():
 
             elif event.type == pygame.MOUSEMOTION:
                 if dragged_object != None:
-                    print("Mouse motion, moving to {}".format(event.pos))
                     dragged_object.rect.x = event.pos[0]-dragged_object.rect.width//2
                     dragged_object.rect.y = event.pos[1]-dragged_object.rect.height//2
-                    draw_board(screen, dragged_object)
+                    draw_board(screen, dragged_object, event.pos)
                     #Move the dragged object to the current mouse position
                 pass
             else:
