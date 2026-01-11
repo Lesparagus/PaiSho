@@ -11,10 +11,14 @@ GREEN = (0,255,0)
 UNOWNED_COLOR = WHITE
 HOST_COLOR = (242,207,169)
 GUEST_COLOR = (102,72,71) 
+
+#Whose turn is it
 PLAYER_NONE = 0
 PLAYER_HOST = 1
 PLAYER_GUEST = 2
 DIALOGBOX = 3
+
+#Piece types
 PIECE_CENOTAPH = 1
 PIECE_JADE=2
 PIECE_JASMINE=3
@@ -24,12 +28,16 @@ PIECE_KOI_FISH=6
 PIECE_BADGER_MOLE=7
 PIECE_DRAGON=8
 
+#Dialogbox types when the dialogbox is on turn
+DIALOGBOX_DRAGON = 1
+
 ROW_LENGTHS = [4,5,6,7,8,8,8,8,8,8,8,8,8,7,6,5,4]
 gamestate = {
     "game_over": False,
     "turn_number": 1,
     "current_player": PLAYER_GUEST,
     "dialogbox_player": PLAYER_NONE,
+    "dialogbox_type": None,
     "board": [],
     "unused_host_pieces": [],
     "unused_guest_pieces": [],
@@ -232,7 +240,7 @@ def draw_board(screen, dragged_object=None):
     elif gamestate["current_player"] == DIALOGBOX:
         player = "Host" if gamestate["dialogbox_player"] == PLAYER_HOST else "Guest"
         dialogbox_text = "{0} must select\nwhich region the\ndragon will affect".format(player)
-        dialogbox_textbox = TextBox(screen, center_x +10*line_increment-line_increment//2, line_increment//2, line_increment*5, line_increment*8,fontSize=line_increment//2,
+        dialogbox_textbox = TextBox(screen, center_x +10*line_increment-line_increment//2, line_increment//2, line_increment*5, line_increment*9,fontSize=line_increment//2,
                 borderColour=(0, 255, 0), textColour=WHITE, colour=BLACK,
                 radius=5, borderThickness=2, color=GREEN)
         dialogbox_textbox.setText(dialogbox_text)
@@ -433,6 +441,7 @@ def play_object(piece, column, row, gamestate):
 
         if piece.type == PIECE_DRAGON:
             gamestate["current_player"] = DIALOGBOX
+            gamestate["dialogbox_type"] = DIALOGBOX_DRAGON
             gamestate["dialogbox_player"] = PLAYER_HOST
         elif gamestate["turn_number"] > 12:
             gamestate["current_player"] = PLAYER_NONE
@@ -443,7 +452,8 @@ def play_object(piece, column, row, gamestate):
         gamestate["unused_guest_pieces"].remove(piece)
         
         if piece.type == PIECE_DRAGON:
-            gamestate["current_player"] = DIALOGBOX
+            gamestate["current_player"] = DIALOGBOX            
+            gamestate["dialogbox_type"] = DIALOGBOX_DRAGON
             gamestate["dialogbox_player"] = PLAYER_GUEST
         else:
             gamestate["current_player"] = PLAYER_HOST
@@ -469,6 +479,76 @@ def play_object(piece, column, row, gamestate):
             gamestate["guest_lotus_active"] = False
         elif piece.owner == PLAYER_GUEST:
             gamestate["host_lotus_active"] = False
+
+def process_dragon_dialogbox_button_press(location, screen):
+    
+    center_x,center_y,line_increment = calculate_dimensions(screen)
+    button = 0
+    for button_offset in range(1,9):
+
+        testrect = pygame.Rect( center_x +10*line_increment-line_increment//4, (1+button_offset)*line_increment, line_increment*4, line_increment//2)
+        print("Colliding button with rect {} to position {}".format(testrect, location))
+        if testrect.collidepoint(location):
+            button=button_offset
+            break
+    print("Button pressed is {}".format(button))
+    pieces_to_remove = []
+    if button==0:
+        return
+    elif button==1:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row < 0 and piece.column >0 and abs(piece.row)+piece.column<=6:
+                    pieces_to_remove.append(piece)
+    elif button==2:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row > 0 and piece.column >0 and piece.row+piece.column<=6:
+                    pieces_to_remove.append(piece)
+    elif button==3:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row > 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)<=6:
+                    pieces_to_remove.append(piece)
+    elif button==4:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if piece.row < 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)<=6:
+                    pieces_to_remove.append(piece)
+    elif button==5:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row < 0 and piece.column >0 and abs(piece.row)+piece.column>=8) and not (piece.row==-1 and piece.column==8) and not (piece.row==-8 and piece.column==1):
+                    pieces_to_remove.append(piece)
+    elif button==6:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row > 0 and piece.column >0 and piece.row+piece.column>=8) and not (piece.row==1 and piece.column==8) and not (piece.row==8 and piece.column==1):
+                    pieces_to_remove.append(piece)
+    elif button==7:    
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row > 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)>=8) and not (piece.row==1 and piece.column==-8) and not (piece.row==8 and piece.column==-1):
+                    pieces_to_remove.append(piece)
+    elif button==8:
+        for piece in gamestate["board"]:
+            if piece.type == PIECE_JADE or piece.type== PIECE_JASMINE:
+                if (piece.row < 0 and piece.column < 0 and abs(piece.row)+abs(piece.column)>=8) and not (piece.row==-1 and piece.column==-8) and not (piece.row==-8 and piece.column==-1):
+                    pieces_to_remove.append(piece)
+    print("Pieces to remove is: {}".format(pieces_to_remove))
+    for piece in pieces_to_remove:
+        gamestate["board"].remove(piece)
+
+    if gamestate["dialogbox_player"]==PLAYER_GUEST:
+        print("Setting current player to host")
+        gamestate["current_player"]=PLAYER_HOST
+    else:        
+        if gamestate["turn_number"] > 12:
+            gamestate["current_player"] = PLAYER_NONE
+            gamestate["game_over"] = True
+        else:            
+            print("Setting current player to guest")
+            gamestate["current_player"]=PLAYER_GUEST
 def paisho():
     pygame.init()
     screen = pygame.display.set_mode((1600, 1200), pygame.RESIZABLE)
@@ -494,7 +574,11 @@ def paisho():
                     dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_guest_pieces"])
                 pass
             elif event.type == pygame.MOUSEBUTTONUP:
-                if dragged_object != None:
+                print("Mouse up!!! {} {}".format(gamestate["current_player"], gamestate["dialogbox_type"]))
+                if gamestate["current_player"] == DIALOGBOX and gamestate["dialogbox_type"] == DIALOGBOX_DRAGON:
+                    process_dragon_dialogbox_button_press(event.pos, screen)                    
+                    draw_board(screen, None)
+                elif dragged_object != None:
                     #Mouse-up is end of a drag, but only if it is your turn and is on a valid piece-ending-spot and it is a valid move for that piece and you were dragging a piece
                     valid, grid_x, grid_y = grid_position_of_drag(event.pos, screen, dragged_object)
                     if valid:
