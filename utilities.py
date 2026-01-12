@@ -1,4 +1,11 @@
 from enums import PieceType, PlayerType
+from constants import ROW_LENGTHS
+
+def board_locations():    
+    for c in range(-8,9):
+        for r in range(-ROW_LENGTHS[c +8], ROW_LENGTHS[c+8]+1):
+            yield c,r
+
 def piece_at_position_can_influence_position(piece_type, piece_column, piece_row, column, row):
     distance = abs(piece_column-column)+abs(piece_row-row)
     if piece_type == PieceType.JASMINE:
