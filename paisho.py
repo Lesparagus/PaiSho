@@ -36,12 +36,22 @@ gamestate = {
     "unused_host_pieces": [],
     "unused_guest_pieces": [],
     "host_lotus_active":False,
-    "guest_lotus_active":False
+    "guest_lotus_active":False,
+    "sky_bison_active":False
 }
 def set_turn(player: PlayerType, dialogbox_player: PlayerType = PlayerType.NONE, dialogbox_type=None):
     gamestate["current_player"] = player
     gamestate["dialogbox_player"] = dialogbox_player
-    gamestate["dialogbox_type"] = None
+    gamestate["dialogbox_type"] = dialogbox_type
+    gamestate["sky_bison_active"] = False
+    print("Setting turn")
+    if player==PlayerType.GUEST or player==PlayerType.HOST:
+        print ("Guest or host is on turn")
+        for piece in gamestate["board"]:
+            print("Board piece {} {} {}".format(piece.owner, player, piece.type))
+            if piece.owner == player and piece.type==PieceType.SKY_BISON:
+                print ("Setting sky bison active to true")
+                gamestate["sky_bison_active"]=True
 
 def calculate_score():
     host_score = 0
@@ -130,7 +140,7 @@ def calculate_dimensions(screen):
     line_increment = min(width//30,height//20)
     return center_x,center_y,line_increment
 
-def draw_board(screen, dragged_object=None, dragged_object_position=None):
+def draw_board(screen, dragged_object=None, dragged_object_position=None, sky_bison_dragged_object=None):
     screen.fill(BLACK)
     center_x,center_y,line_increment = calculate_dimensions(screen)
     edge_width = line_increment
@@ -191,12 +201,13 @@ def draw_board(screen, dragged_object=None, dragged_object_position=None):
     textbox.draw()
     
     for piece in gamestate["board"]:
-        piece.rect.x = center_x + piece.column * line_increment - line_increment//2
-        piece.rect.y = center_y + piece.row * line_increment -line_increment//2
-        piece.rect.width = line_increment
-        piece.rect.height = line_increment
-        piece.image = pygame.transform.scale(piece.original_image, (line_increment, line_increment))
-        piece.draw(screen, gamestate["board"])
+        if piece != sky_bison_dragged_object:
+            piece.rect.x = center_x + piece.column * line_increment - line_increment//2
+            piece.rect.y = center_y + piece.row * line_increment -line_increment//2
+            piece.rect.width = line_increment
+            piece.rect.height = line_increment
+            piece.image = pygame.transform.scale(piece.original_image, (line_increment, line_increment))
+            piece.draw(screen, gamestate["board"])
     for piece in gamestate["unused_host_pieces"]:
         if piece != dragged_object:
             piece.rect.x = center_x + piece.column * line_increment - line_increment//2
@@ -213,15 +224,26 @@ def draw_board(screen, dragged_object=None, dragged_object_position=None):
             piece.rect.height = line_increment
             piece.image = pygame.transform.scale(piece.original_image, (line_increment, line_increment))
             piece.draw(screen, gamestate["board"])
-    if dragged_object:
-        print("Drawing dragged object with dragged oject ")
+    if dragged_object != None:
+        #print("Drawing dragged object with dragged oject ")
         valid, column, row = grid_position_of_drag(dragged_object_position, screen, dragged_object)
-        print("drawing hallowed locations for dragged object {} {} {} ".format(valid, column, row))
+        #print("drawing hallowed locations for dragged object {} {} {} ".format(valid, column, row))
         if valid:
             draw_hallowed_locations(screen, dragged_object, column, row)
             
         draw_blocked_locations(screen, dragged_object)
+        #print ("Calling draw on dragged object")
         dragged_object.draw(screen, gamestate["board"])
+    if sky_bison_dragged_object != None:
+        #print("Drawing sb dragged object with dragged oject {}".format(sky_bison_dragged_object))
+        valid, column, row = grid_position_of_drag(dragged_object_position, screen, sky_bison_dragged_object, sky_bison_drag=True)
+        #print("drawing hallowed locations for sb dragged object {} {} {} ".format(valid, column, row))
+        if valid:
+            draw_hallowed_locations(screen, sky_bison_dragged_object, column, row)
+            
+        draw_blocked_locations(screen, sky_bison_dragged_object, sky_bison_drag=True)
+        #print("Calling draw on sky bison dragged object")
+        sky_bison_dragged_object.draw(screen, gamestate["board"])
     pygame.display.update()
 
 def draw_hallow_location_mark(screen, column, row):
@@ -233,17 +255,15 @@ def draw_blocked_location_mark(screen, column, row):
     pygame.draw.circle(screen, MAGENTA, (center_x+column*line_increment, center_y+row*line_increment), line_increment//10)
 def draw_hallowed_locations(screen, dragged_object, column, row):
     if not(dragged_object.type == PieceType.JADE or dragged_object.type==PieceType.JASMINE or dragged_object.type== PieceType.LOTUS):
-        print ("Abort, not a flower!")
         return
     for c, r in board_locations():
-        print("Checking influence at {} {}".format(c,r))
         if piece_at_position_can_influence_position(dragged_object.type,column,row,c,r):
-            print("Piece can influence {} {}".format(c,r))
             draw_hallow_location_mark(screen, c, r)
 
-def draw_blocked_locations(screen,dragged_object):
+def draw_blocked_locations(screen,dragged_object, sky_bison_drag=False):
+    print("Drawing blocked locations with sbdrag {}".format(sky_bison_drag))
     for column, row in board_locations():
-        if not can_play_piece_at(dragged_object,column,row):
+        if not can_play_piece_at(dragged_object,column,row,sky_bison_drag):
             draw_blocked_location_mark(screen, column, row)
 def status_box_text():
 
@@ -294,12 +314,21 @@ def status_box_text():
             guest_lotus_string = "\n Guest Lotus Active, next host cenotaph played must be near it"
         return "{}'s turn {}\nTemples:\n  North: {}\n  East: {}\n  South: {}\n  West: {}\nScore:\n  Host: {}\n  Guest: {}\n  Unclaimed: {} {} {}".format(player_string, gamestate["turn_number"], north_temple, east_temple, south_temple, west_temple, host_score, guest_score, unclaimed_score, host_lotus_string,guest_lotus_string)
 
-def can_play_piece_at(piece, column, row):
+def can_play_piece_at(piece, column, row, sky_bison_drag=False):
+    if piece is None:
+        return False
+    if sky_bison_drag:
+        #Is there a sky bison owned by this player?
+        for possible_bison in gamestate["board"]:
+            if possible_bison.type==PieceType.SKY_BISON:
+                if possible_bison.owner==gamestate["current_player"]:
+                    #Yes, there is a bison!
+                    if abs(column-possible_bison.column)+abs(row-possible_bison.row) > 5:
+                        return False
     #Check whether there's a tile at this spot already
     for other_piece in gamestate["board"]:
         #print("Comparing to piece at {},{}".format(other_piece.column, other_piece.row))
         if other_piece.column == column and other_piece.row == row:
-            print("Cannot play piece here, occupied")
             return False
     #Check whether this is a temple here
     if (row ==8 and column ==0) or (row == -8 and column ==0) or (row ==0 and column ==8) or (row ==0 and column ==-8):
@@ -351,13 +380,13 @@ def can_play_piece_at(piece, column, row):
     #print("Can play piece here")
     return True
 
-def grid_position_of_drag(position, screen, piece):
+def grid_position_of_drag(position, screen, piece, sky_bison_drag=False):
     print ("Finding grid position of drag at {}".format(position))   
     center_x,center_y,line_increment = calculate_dimensions(screen)
     for column, row in board_locations():
         testrect = pygame.Rect(center_x + column*line_increment - line_increment//3, center_y + row*line_increment - line_increment//3, 2*line_increment//3, 2*line_increment//3)
         if testrect.collidepoint(position):
-            if can_play_piece_at(piece, column, row):
+            if can_play_piece_at(piece, column, row, sky_bison_drag):
                 return True, column, row
             else:
                 return False, 0, 0
@@ -386,7 +415,9 @@ def available_temple(player):
     return False
 
 def check_for_draggable_piece(position, gamestate, pieces):
+    
     remaining_cenotaphs = 0
+    #Check for draggable piece in your unused pieces
     for possible_piece in pieces:
         if possible_piece.type == PieceType.CENOTAPH:
             remaining_cenotaphs += 1
@@ -397,38 +428,59 @@ def check_for_draggable_piece(position, gamestate, pieces):
             if available_temple(gamestate["current_player"]) == False:
                 continue
         if possible_piece.rect.collidepoint(position):
-            return possible_piece
-    return None
-def play_object(piece, column, row, gamestate):
+            return possible_piece, None
+        
+    #Check for draggable piece if you own a skybison and have not used it yet this turn
+    print("checking for sky bison draggable piece {}".format(gamestate["sky_bison_active"]))
+    if gamestate["sky_bison_active"]:
+        print("gamestate is sky bison active")
+        #It is active, so you have not yet used it this turn
+        for possible_sky_bison in gamestate["board"]:    
+            #print("Possible bison: {} {}".format(possible_sky_bison.type, possible_sky_bison.owner))        
+            if possible_sky_bison.type == PieceType.SKY_BISON and possible_sky_bison.owner == gamestate["current_player"]:
+                print("Found sky bison owned by active player")
+                #There is a sky bison, and you own it.
+                for possible_draggable_piece in gamestate["board"]:
+                    
+                    if possible_draggable_piece.rect.collidepoint(position):
+                        print("Possible piece is {} {} {} {}".format(possible_draggable_piece.owner, gamestate["current_player"], possible_draggable_piece.type, possible_draggable_piece.is_flower()))
+                        if possible_draggable_piece.owner == gamestate["current_player"] and possible_draggable_piece.is_flower():
+                            distance = abs(possible_sky_bison.column-possible_draggable_piece.column)+abs(possible_sky_bison.row-possible_draggable_piece.row)
+                            print("Distance is {}  columns {} {} rows {} {} ".format(distance, possible_sky_bison.column, possible_draggable_piece.column, possible_sky_bison.row, possible_draggable_piece.row))
+                            if distance<=5:
+                                print("Found draggable piece for sky bison drag!!!!")
+                                return None, possible_draggable_piece
+    return None, None
+
+def play_object(piece, column, row, gamestate, sky_bison_move=False):
+    print("Play object sky ison move is {}".format(sky_bison_move))
     piece.column = column
     piece.row = row
     gamestate["board"].append(piece)
     if gamestate["current_player"] == PlayerType.HOST:
-        gamestate["unused_host_pieces"].remove(piece)
+        if piece in gamestate["unused_host_pieces"]:
+            gamestate["unused_host_pieces"].remove(piece)
         gamestate["turn_number"] = gamestate["turn_number"] + 1
-
-        if piece.type == PieceType.DRAGON:
-            set_turn(PlayerType.DIALOGBOX, PlayerType.Host, DIALOGBOX_DRAGON)
-        elif piece.type == PieceType.KOI_FISH:
-            set_turn(PlayerType.DIALOGBOX, PlayerType.HOST, DIALOGBOX_KOI)
-        elif gamestate["turn_number"] > 12:
-            set_turn(PlayerType.NONE)
-            gamestate["game_over"] = True
-        else:
-            set_turn(PlayerType.GUEST)
+        if not sky_bison_move:
+            if piece.type == PieceType.DRAGON:
+                set_turn(PlayerType.DIALOGBOX, PlayerType.HOST, DIALOGBOX_DRAGON)
+            elif piece.type == PieceType.KOI_FISH:
+                set_turn(PlayerType.DIALOGBOX, PlayerType.HOST, DIALOGBOX_KOI)
+            elif gamestate["turn_number"] > 12:
+                set_turn(PlayerType.NONE)
+                gamestate["game_over"] = True
+            else:
+                set_turn(PlayerType.GUEST)
     elif gamestate["current_player"] == PlayerType.GUEST:
-        gamestate["unused_guest_pieces"].remove(piece)
-        
-        if piece.type == PieceType.DRAGON:
-            gamestate["current_player"] = PlayerType.DIALOGBOX            
-            gamestate["dialogbox_type"] = DIALOGBOX_DRAGON
-            gamestate["dialogbox_player"] = PlayerType.GUEST
-        elif piece.type == PieceType.KOI_FISH:
-            gamestate["current_player"] = PlayerType.DIALOGBOX
-            gamestate["dialogbox_type"] = DIALOGBOX_KOI
-            gamestate["dialogbox_player"] = PlayerType.GUEST
-        else:
-            gamestate["current_player"] = PlayerType.HOST
+        if piece in gamestate["unused_guest_pieces"]:
+            gamestate["unused_guest_pieces"].remove(piece)
+        if not sky_bison_move:
+            if piece.type == PieceType.DRAGON:
+                set_turn(PlayerType.DIALOGBOX, PlayerType.GUEST, DIALOGBOX_DRAGON)
+            elif piece.type == PieceType.KOI_FISH:
+                set_turn(PlayerType.DIALOGBOX, PlayerType.GUEST, DIALOGBOX_KOI)
+            else:
+                set_turn(PlayerType.HOST)
     if piece.type in [PieceType.BADGER_MOLE, PieceType.DRAGON, PieceType.KOI_FISH, PieceType.SKY_BISON]:
         if piece.owner == PlayerType.HOST:
             for other_piece in gamestate["unused_guest_pieces"]:
@@ -576,13 +628,14 @@ def process_dragon_dialogbox_button_press(location, screen):
         gamestate["board"].remove(piece)
 
     if gamestate["dialogbox_player"]==PlayerType.GUEST:
-        gamestate["current_player"]=PlayerType.HOST
+        set_turn(PlayerType.HOST)
     else:        
         if gamestate["turn_number"] > 12:
-            gamestate["current_player"] = PlayerType.NONE
+            set_turn(PlayerType.NONE)
             gamestate["game_over"] = True
         else:            
-            gamestate["current_player"]=PlayerType.GUEST
+            set_turn(PlayerType.GUEST)
+
 def paisho():
     pygame.init()
     screen = pygame.display.set_mode((1600, 1200), pygame.RESIZABLE)
@@ -590,6 +643,7 @@ def paisho():
     setup_board()
     draw_board(screen)
     dragged_object = None
+    sky_bison_dragged_object = None
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -599,12 +653,14 @@ def paisho():
                 draw_board(screen)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 #Mouse-down is start of a drag, but only if it is your turn and is on a valid piece-starting-spot
-                if dragged_object != None:
+                if dragged_object != None or sky_bison_dragged_object != None:
                     pass
                 elif gamestate["current_player"] == PlayerType.HOST:
-                    dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_host_pieces"])
+                    dragged_object, sky_bison_dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_host_pieces"])
+                    print("Setting host's dragged objects to {} {} ".format(dragged_object,sky_bison_dragged_object))
                 elif gamestate["current_player"] == PlayerType.GUEST:                    
-                    dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_guest_pieces"])
+                    dragged_object, sky_bison_dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_guest_pieces"])
+                    print("Setting guest's dragged objects to {} {} ".format(dragged_object,sky_bison_dragged_object))
                 pass
             elif event.type == pygame.MOUSEBUTTONUP:
                 if gamestate["current_player"] == PlayerType.DIALOGBOX and gamestate["dialogbox_type"] == DIALOGBOX_DRAGON:
@@ -614,19 +670,38 @@ def paisho():
                     process_koi_dialogbox_button_press(event.pos, screen)                    
                     draw_board(screen, None)
                 elif dragged_object != None:
+                    print("In mouse button up, sky bison dragged object is not null!")
                     #Mouse-up is end of a drag, but only if it is your turn and is on a valid piece-ending-spot and it is a valid move for that piece and you were dragging a piece
                     valid, grid_x, grid_y = grid_position_of_drag(event.pos, screen, dragged_object)
                     if valid:
-                        play_object(dragged_object, grid_x, grid_y, gamestate)
+                        play_object(dragged_object, grid_x, grid_y, gamestate, sky_bison_move=False)
   
                     dragged_object = None
                     draw_board(screen, None)
+                elif sky_bison_dragged_object != None:
+                    print("In mouse button up, sky bison dragged object is not null!")
+                    #Mouse-up is end of a drag, but only if it is your turn and is on a valid piece-ending-spot and it is a valid move for that piece and you were dragging a piece
+                    valid, grid_x, grid_y = grid_position_of_drag(event.pos, screen, sky_bison_dragged_object, sky_bison_drag=True)
+                    print("Return from grid position of drag: {} {} {} ".format(valid, grid_x, grid_y))
+                    if valid:
+                        play_object(sky_bison_dragged_object, grid_x, grid_y, gamestate, sky_bison_move=True)  
+                        gamestate["sky_bison_active"] = False
+                        
+                    sky_bison_dragged_object = None
+                    draw_board(screen, None)
+
 
             elif event.type == pygame.MOUSEMOTION:
-                if dragged_object != None:
-                    dragged_object.rect.x = event.pos[0]-dragged_object.rect.width//2
-                    dragged_object.rect.y = event.pos[1]-dragged_object.rect.height//2
-                    draw_board(screen, dragged_object, event.pos)
+                if dragged_object != None or sky_bison_dragged_object != None:
+                    if dragged_object != None:
+                        dragged_object.rect.x = event.pos[0]-dragged_object.rect.width//2
+                        dragged_object.rect.y = event.pos[1]-dragged_object.rect.height//2
+                    if sky_bison_dragged_object != None:
+                        sky_bison_dragged_object.rect.x = event.pos[0]-sky_bison_dragged_object.rect.width//2
+                        sky_bison_dragged_object.rect.y = event.pos[1]-sky_bison_dragged_object.rect.height//2
+                        
+                        print ("Set sky bison dragged obj coords to: {},{}".format(sky_bison_dragged_object.rect.x, sky_bison_dragged_object.rect.y))
+                    draw_board(screen, dragged_object, event.pos, sky_bison_dragged_object)
                     #Move the dragged object to the current mouse position
                 pass
             else:
