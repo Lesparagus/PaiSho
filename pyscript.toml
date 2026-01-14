@@ -1,0 +1,15 @@
+name = "Pygame demo"
+
+[files]
+"./constants.py" = ""
+"./enums.py" = ""
+"./piece.py" = ""
+"./utilities.py" = ""
+"./white-badgermole.png" = ""
+"./white-bison.png" = ""
+"./white-cenotaph.png" = ""
+"./white-dragon.png" = ""
+"./white-jade.png" = ""
+"./white-jasmine.png" = ""
+"./white-koi.png" = ""
+"./white-lotus.png" = ""
