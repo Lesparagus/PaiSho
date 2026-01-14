@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "austin",
+            "file": "paisho.py",
+            "args": [],
+            "label": "Profile paisho.py",
+            "problemMatcher": [
+                "$python"
+            ]
+        }
+    ]
+}

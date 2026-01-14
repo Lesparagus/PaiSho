@@ -4,30 +4,23 @@ import pygame
 from enums import PieceType, PlayerType, Color
 from utilities import influence_at_position, piece_at_position_can_influence_position
 
+imageDict = {}
+for type, image in [(PieceType.CENOTAPH, "white-cenotaph.png"),
+                   (PieceType.JADE, "white-jade.png"),
+                   (PieceType.JASMINE, "white-jasmine.png"),
+                   (PieceType.LOTUS,"white-lotus.png" ),
+                   (PieceType.SKY_BISON,"white-bison.png" ),
+                   (PieceType.BADGER_MOLE,"white-badgermole.png"),
+                   (PieceType.KOI_FISH, "white-koi.png"),
+                   (PieceType.DRAGON, "white-dragon.png" )
+                   ]:
+    imageDict[type]=pygame.image.load(image)
+
 class Piece(Sprite):
 
     def set_type(self,type: PieceType):
         self.type=type
-        image=None
-        if type==PieceType.CENOTAPH:
-            image="white-cenotaph.png"            
-        elif type==PieceType.JADE:
-            image="white-jade.png"
-        elif type==PieceType.JASMINE:
-            image="white-jasmine.png"
-        elif type==PieceType.LOTUS:
-            image="white-lotus.png"
-        elif type==PieceType.SKY_BISON:
-            image="white-bison.png"
-        elif type==PieceType.KOI_FISH:
-            image="white-koi.png"     
-        elif type==PieceType.BADGER_MOLE:
-            image="white-badgermole.png"
-        elif type==PieceType.DRAGON:
-            image="white-dragon.png"
-
-        self.original_image = pygame.image.load(image)
-        self.image = self.original_image
+        self.image = imageDict[type]
 
     def __init__(self, column: int, row: int, type: PieceType = PieceType.CENOTAPH, owner:PlayerType =PlayerType.NONE):
         Sprite.__init__(self)        
