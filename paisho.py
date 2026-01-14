@@ -34,6 +34,7 @@ gamestate = {
     "host_lotus_active":False,
     "guest_lotus_active":False,
     "sky_bison_active":False,
+    "badger_mole":False,
     "player_with_sky_bison": PlayerType.NONE
 }
 
@@ -326,17 +327,11 @@ def can_play_piece_at(piece, column, row, sky_bison_drag=False):
             return False
     #If opponent has a badgermole within range, you can't place a flower down here
     if piece.type == PieceType.JADE or piece.type == PieceType.JASMINE or piece.type == PieceType.LOTUS:
-        #print ("Trying to place a flower")
-        for possible_mole in gamestate["board"]:
-            #print("Checking for moles")
-            if possible_mole.type == PieceType.BADGER_MOLE:
-                #print("found mole")
-                if possible_mole.owner != piece.owner:
-                    #print("Mole has different owner")
-                    distance = abs(row-possible_mole.row)+abs(column-possible_mole.column)                    
-                    #print("Distance is {}".format(distance))
-                    if  distance <= 5:
-                        return False
+        if gamestate["badger_mole"] and gamestate["badger_mole"].owner != piece.owner:
+            distance = abs(row-gamestate["badger_mole"].row)+abs(column-gamestate["badger_mole"].column)                    
+            #print("Distance is {}".format(distance))
+            if  distance <= 5:
+                return False
     if piece.type == PieceType.CENOTAPH:
         for possible_cenotaph in gamestate["board"]:
             #print("Checking for other cenotaphs")            
@@ -420,19 +415,14 @@ def check_for_draggable_piece(position, gamestate, pieces):
             return possible_piece, None
         
     #Check for draggable piece if you own a skybison and have not used it yet this turn
-    #print("checking for sky bison draggable piece {}".format(gamestate["sky_bison_active"]))
     if gamestate["sky_bison_active"]:
-        #print("gamestate is sky bison active")
         #It is active, so you have not yet used it this turn
         if gamestate["sky_bison"] is not None and gamestate["player_with_sky_bison"]==gamestate["current_player"]:
             for possible_draggable_piece in gamestate["board"]:                
                 if possible_draggable_piece.rect.collidepoint(position):
-                    #print("Possible piece is {} {} {} {}".format(possible_draggable_piece.owner, gamestate["current_player"], possible_draggable_piece.type, possible_draggable_piece.is_flower()))
                     if possible_draggable_piece.owner == gamestate["current_player"] and possible_draggable_piece.is_flower():
                         distance = abs(gamestate["sky_bison"].column-possible_draggable_piece.column)+abs(gamestate["sky_bison"].row-possible_draggable_piece.row)
-                        #print("Distance is {}  columns {} {} rows {} {} ".format(distance, possible_sky_bison.column, possible_draggable_piece.column, possible_sky_bison.row, possible_draggable_piece.row))
                         if distance<=5:
-                            #print("Found draggable piece for sky bison drag!!!!")
                             return None, possible_draggable_piece
     return None, None
 
@@ -444,6 +434,8 @@ def play_object(piece, column, row, gamestate, sky_bison_move=False):
     if piece.type==PieceType.SKY_BISON:
         gamestate["player_with_sky_bison"] = gamestate["current_player"] 
         gamestate["sky_bison"] = piece
+    if piece.type==PieceType.BADGER_MOLE:
+        gamestate["badger_mole"] = piece
     if gamestate["current_player"] == PlayerType.HOST:
         if piece in gamestate["unused_host_pieces"]:
             gamestate["unused_host_pieces"].remove(piece)
