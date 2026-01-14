@@ -644,10 +644,8 @@ async def gameloop():
                     pass
                 elif gamestate["current_player"] == PlayerType.HOST:
                     dragged_object, sky_bison_dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_host_pieces"])
-                    #print("Setting host's dragged objects to {} {} ".format(dragged_object,sky_bison_dragged_object))
                 elif gamestate["current_player"] == PlayerType.GUEST:                    
                     dragged_object, sky_bison_dragged_object = check_for_draggable_piece(event.pos, gamestate, gamestate["unused_guest_pieces"])
-                    #print("Setting guest's dragged objects to {} {} ".format(dragged_object,sky_bison_dragged_object))
                 pass
             elif event.type == pygame.MOUSEBUTTONUP:
                 if gamestate["current_player"] == PlayerType.DIALOGBOX and gamestate["dialogbox_type"] == DIALOGBOX_DRAGON:
@@ -694,8 +692,7 @@ async def gameloop():
             else:
                 pass
             
-            await asyncio.sleep(0)
-        await asyncio.sleep(0)
+        await asyncio.sleep(1/60)
     pygame.quit()
 
 asyncio.run(paisho())
