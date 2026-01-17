@@ -1,4 +1,5 @@
 name = "Pygame demo"
+debug = true
 
 [files]
 "./constants.py" = ""
