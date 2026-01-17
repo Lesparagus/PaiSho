@@ -254,9 +254,26 @@ def draw_hallowed_locations(screen, dragged_object, column, row):
 
 def draw_blocked_locations(screen,dragged_object, sky_bison_drag=False):
     #print("Drawing blocked locations with sbdrag {}".format(sky_bison_drag))
-    for column, row in board_locations():
-        if not can_play_piece_at(dragged_object,column,row,sky_bison_drag):
-            draw_blocked_location_mark(screen, column, row)
+    if not dragged_object.type==PieceType.CENOTAPH:   
+        for column, row in board_locations():
+            if not can_play_piece_at(dragged_object,column,row,sky_bison_drag, ignore_lotus=False):
+                draw_blocked_location_mark(screen, column, row)
+    else:        
+        print("doing a cenotaph")
+        valid_location = False
+        for column, row in board_locations():
+            if can_play_piece_at(dragged_object,column,row,sky_bison_drag, ignore_lotus=False):
+                valid_location=True
+                break
+        print("Valid location {} ".format(valid_location))
+        ignore_lotus=False
+        if not valid_location:
+            ignore_lotus=True
+        print("Ignore lotus is: {} ".format(ignore_lotus))
+        for column, row in board_locations():
+            if not can_play_piece_at(dragged_object, column,row, sky_bison_drag, ignore_lotus):
+                draw_blocked_location_mark(screen, column, row)
+
 def status_box_text():
 
     host_score, guest_score, unclaimed_score = calculate_score()
@@ -306,7 +323,7 @@ def status_box_text():
             guest_lotus_string = "\n Guest Lotus Active, next\n host cenotaph played\n must be near it"
         return "{}'s turn {}\nTemples:\n  North: {}\n  East: {}\n  South: {}\n  West: {}\nScore:\n  Host: {}\n  Guest: {}\n  Unclaimed: {} {} {}".format(player_string, gamestate["turn_number"], north_temple, east_temple, south_temple, west_temple, host_score, guest_score, unclaimed_score, host_lotus_string,guest_lotus_string)
 
-def can_play_piece_at(piece, column, row, sky_bison_drag=False):
+def can_play_piece_at(piece, column, row, sky_bison_drag=False, ignore_lotus=False):
     if piece is None:
         return False
     if sky_bison_drag:
@@ -340,7 +357,7 @@ def can_play_piece_at(piece, column, row, sky_bison_drag=False):
                 #print("Distance is {}".format(distance))
                 if  distance <= 5:
                     return False
-        if gamestate["current_player"] == PlayerType.HOST and gamestate["guest_lotus_active"]:
+        if gamestate["current_player"] == PlayerType.HOST and gamestate["guest_lotus_active"] and not ignore_lotus:
             lotus_found = False
             for other_piece in gamestate["board"]:
                 if other_piece.type == PieceType.LOTUS and other_piece.owner == PlayerType.GUEST:
@@ -348,7 +365,7 @@ def can_play_piece_at(piece, column, row, sky_bison_drag=False):
                     if distance <=2:
                         lotus_found = True
             return lotus_found
-        elif gamestate["current_player"] == PlayerType.GUEST and gamestate["host_lotus_active"]:
+        elif gamestate["current_player"] == PlayerType.GUEST and gamestate["host_lotus_active"] and not ignore_lotus:
             lotus_found = False
             for other_piece in gamestate["board"]:
                 if other_piece.type == PieceType.LOTUS and other_piece.owner == PlayerType.HOST:
@@ -370,10 +387,26 @@ def grid_position_of_drag(position, screen, piece, sky_bison_drag=False):
     for column, row in board_locations():
         testrect = pygame.Rect(center_x + column*line_increment - line_increment//3, center_y + row*line_increment - line_increment//3, 2*line_increment//3, 2*line_increment//3)
         if testrect.collidepoint(position):
-            if can_play_piece_at(piece, column, row, sky_bison_drag):
-                return True, column, row
+            if piece.type==PieceType.CENOTAPH:
+                valid_location = False
+                for iter_column, iter_row in board_locations():
+                    if can_play_piece_at(piece,iter_column,iter_row,sky_bison_drag, ignore_lotus=False):
+                        valid_location=True
+                        break
+                print("Valid location {} ".format(valid_location))
+                ignore_lotus=False
+                if not valid_location:
+                    ignore_lotus=True
+                if can_play_piece_at(piece, column, row, sky_bison_drag, ignore_lotus):
+                    return True, column, row
+                else:
+                    return False, 0, 0
             else:
-                return False, 0, 0
+                if can_play_piece_at(piece, column, row, sky_bison_drag):
+                    return True, column, row
+                else:
+                    return False, 0, 0
+
     return False, 0, 0
 
 def location_occupied(column, row):
@@ -472,7 +505,7 @@ def play_object(piece, column, row, gamestate, sky_bison_move=False):
                     gamestate["unused_host_pieces"].remove(other_piece)
                     break
 
-    if piece.type == PieceType.LOTUS:
+    if piece.type == PieceType.LOTUS and sky_bison_move==False:
         if piece.owner == PlayerType.HOST:
             gamestate["host_lotus_active"] = True
         elif piece.owner == PlayerType.GUEST:
