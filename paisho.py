@@ -355,7 +355,7 @@ def can_play_piece_at(piece, column, row, sky_bison_drag=False, ignore_lotus=Fal
             if possible_cenotaph.type == PieceType.CENOTAPH:
                 distance = abs(row-possible_cenotaph.row)+abs(column-possible_cenotaph.column)                    
                 #print("Distance is {}".format(distance))
-                if  distance <= 5:
+                if  distance <= 4:
                     return False
         if gamestate["current_player"] == PlayerType.HOST and gamestate["guest_lotus_active"] and not ignore_lotus:
             lotus_found = False
